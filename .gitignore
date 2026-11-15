@@ -7,3 +7,6 @@
 
 # Vagrant machine state
 .vagrant/
+
+# Build cache (ISOs, console logs)
+vagrant/.cache/
