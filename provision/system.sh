@@ -24,5 +24,19 @@ if [[ ! -f /swapfile ]]; then
   swapon /swapfile
 fi
 
+# The bridged network card puts sshd on your LAN, and the box's vagrant user has
+# the well-known password "vagrant" plus passwordless sudo. Vagrant only needs
+# key login, so turn passwords off. sshd keeps the first value it reads, so
+# this file must sort before Arch's 99-archlinux.conf.
+echo "==> Disabling SSH password login"
+cat > /etc/ssh/sshd_config.d/10-no-password.conf <<'EOF'
+# Key-only SSH (claude-sandbox provisioning): the VM is reachable from the LAN.
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no
+EOF
+sshd -t
+systemctl reload sshd
+
 pacman -Scc --noconfirm >/dev/null
 echo "==> System ready"

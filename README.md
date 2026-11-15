@@ -56,9 +56,37 @@ Team or Enterprise plan; API-key logins don't get Remote Control.
 - **Isolated**: your Mac's files. No folders are shared by default (see the commented
   `synced_folder` line in the `Vagrantfile`). If you share one, Claude can change or delete
   anything in it.
-- **Not isolated**: the network. The VM has full internet access, can reach your LAN, and can
-  reach services on your Mac at `192.168.64.1`. Anything you log into inside the VM (Claude,
-  `gh auth login`, git credentials) can be used by the agent.
+- **Not isolated**: the network. The VM has full internet access, its own address on your LAN
+  (see below), and can reach services on your Mac at `192.168.64.1`. Anything you log into
+  inside the VM (Claude, `gh auth login`, git credentials) can be used by the agent.
 
 To work on a repository, clone it inside the VM (`git clone` in `~/workspace`) and push
-from there, or copy files out with `vagrant ssh -c 'cat ...'` or `scp -P 2250`.
+from there, or copy files out with `vagrant ssh -c 'cat ...'` or `scp -P 2222`.
+
+## LAN access (bridged network card)
+
+The VM has three network cards:
+
+| Card in the guest | UTM mode | Used for |
+|---|---|---|
+| `enp0s1` | Shared Network | NAT through the Mac (`192.168.64.x`), required by vagrant_utm |
+| `enp0s2` | Emulated VLAN | `vagrant ssh` port forward (127.0.0.1:2222), required by vagrant_utm |
+| `enp0s3` | Bridged on `en0` | Its own LAN address from your router's DHCP |
+
+The plugin can't create bridged cards (it ignores `public_network`). Instead, the
+`Vagrantfile` runs `scripts/bridged-nic.applescript` as a pre-boot customization, which adds
+or updates the third card through UTM's AppleScript interface. Choose the Mac interface with
+`BRIDGE_IF` (default `en0`, the Wi-Fi; `en3`/`en4` for an Ethernet adapter). `BRIDGE_IF=""`
+removes the card. Changes apply on the next `vagrant up` or `vagrant reload`.
+
+- **Find the address**: `vagrant ssh -c 'ip -br -4 addr show enp0s3'`. It comes from your
+  router's DHCP, so reserve one there for the card's MAC address if you want it fixed. The
+  MAC stays the same until the VM is destroyed.
+- **SSH from the LAN** works with the Vagrant key only: provisioning turns off password and
+  root login (`/etc/ssh/sshd_config.d/10-no-password.conf`), because the box's
+  `vagrant`/`vagrant` password and passwordless sudo would otherwise be open to your network.
+- **The Mac reaching the VM** on its LAN address can fail with "No route to host" until the VM
+  has sent the Mac some traffic. Bridging over Wi-Fi gives the Mac no direct path to the
+  VM's MAC address until it learns it. `vagrant ssh` is unaffected.
+- **Wi-Fi bridging** depends on the access point accepting a second MAC address from one
+  client. If the card gets no address, use a wired adapter.
