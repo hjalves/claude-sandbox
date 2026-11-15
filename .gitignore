@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+
+# Large downloads and build outputs
+*.iso
+*.box
+
+# Vagrant machine state
+.vagrant/
