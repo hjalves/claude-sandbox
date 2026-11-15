@@ -17,17 +17,22 @@ sed -i '\|^export PATH="$HOME/.local/bin:$PATH"$|d' "$HOME/.bashrc"
 sed -i "1i $PATH_LINE" "$HOME/.bashrc"
 export PATH="$HOME/.local/bin:$PATH"
 
-echo "==> Writing ~/.claude/settings.json (bypassPermissions)"
+echo "==> Updating ~/.claude/settings.json (bypassPermissions, Remote Control at startup)"
+# Merge into any existing file so choices made inside Claude Code (theme,
+# model, ...) survive re-provisioning.
+#  - bypassPermissions + skipDangerousModePermissionPrompt: no permission prompts
+#  - remoteControlAtStartup: every interactive session registers with Remote
+#    Control, so it shows up in claude.ai/code and the Claude app (needs a
+#    claude.ai login; API keys can't use Remote Control)
+SETTINGS="$HOME/.claude/settings.json"
 mkdir -p "$HOME/.claude"
-cat > "$HOME/.claude/settings.json" <<'EOF'
-{
+[[ -s "$SETTINGS" ]] && jq -e . "$SETTINGS" >/dev/null 2>&1 || echo '{}' > "$SETTINGS"
+jq '. * {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "permissions": {
-    "defaultMode": "bypassPermissions"
-  },
-  "skipDangerousModePermissionPrompt": true
-}
-EOF
+  "permissions": {"defaultMode": "bypassPermissions"},
+  "skipDangerousModePermissionPrompt": true,
+  "remoteControlAtStartup": true
+}' "$SETTINGS" > "$SETTINGS.tmp" && mv "$SETTINGS.tmp" "$SETTINGS"
 
 mkdir -p "$HOME/workspace"
 cat > "$HOME/workspace/CLAUDE.md" <<'EOF'
