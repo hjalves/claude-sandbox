@@ -41,6 +41,9 @@ Team or Enterprise plan; API-key logins don't get Remote Control.
 ## What's inside
 
 - **VM**: 4 CPUs, 6 GB RAM, 2 GB swap, 16 GB disk (about 10 GB free after provisioning)
+- **DNS**: `/etc/resolv.conf` links to systemd-resolved's stub
+  (`/run/systemd/resolve/stub-resolv.conf`, `127.0.0.53`); `resolvectl status` shows the
+  upstream servers each card got from DHCP
 - **Tools**: git, gh, ripgrep, fd, jq, Python with pip and uv, Node and npm, base-devel
   (gcc, make), tmux and vim. `vagrant` has passwordless sudo, so Claude can
   `sudo pacman -S` anything else.
