@@ -16,10 +16,20 @@ in, and paste the code back. To use an API key instead, run `export ANTHROPIC_AP
 inside the VM before `claude-yolo`. The login is saved in the VM, so it's lost on
 `vagrant destroy` or when you restore a snapshot taken before you logged in.
 
-**Remote Control** starts automatically: each `claude-yolo` session shows `/rc active` and
-appears in claude.ai/code and the Claude app as `claude-sandbox-…`. You can drive it from
-your phone or browser while the terminal session keeps running. It needs a claude.ai login
-on a Pro, Max, Ultra, Team or Enterprise plan; API-key logins don't get Remote Control.
+**Remote Control** works in two ways. Both need a claude.ai login on a Pro, Max, Ultra,
+Team or Enterprise plan; API-key logins don't get Remote Control.
+
+- **The VM as a machine**: a systemd user service (`claude-remote-control`, started at boot
+  through linger) runs `claude remote-control` in server mode. The VM then shows up in
+  claude.ai/code and the Claude app as an environment (`workspace`, sessions named
+  `claude-sandbox-…`) where you can start new sessions, up to 32 at once, in `~/workspace`
+  with permissions bypassed. Nothing needs to be open on the Mac; the VM just has to be
+  running. Inside the VM, `claude-rc` shows the server's URL and QR code (detach with
+  Ctrl-b d), and `systemctl --user status claude-remote-control` shows the service. After a
+  restore to `clean`, the service waits until you log in again with `claude-yolo`. The first
+  run on a new login also asks a one-time "Enable Remote Control? (y/n)" in `claude-rc`.
+- **Terminal sessions**: each `claude-yolo` session also shows `/rc active` and appears in
+  the session list, so you can continue it from your phone or browser while it runs.
 
 | Command | What it does |
 |---|---|

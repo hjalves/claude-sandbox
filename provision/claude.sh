@@ -56,6 +56,54 @@ chmod +x "$HOME/.local/bin/claude-yolo"
 # never sees ~/.local/bin. Link both commands somewhere on the system PATH.
 sudo ln -sf "$HOME/.local/bin/claude"      /usr/local/bin/claude
 sudo ln -sf "$HOME/.local/bin/claude-yolo" /usr/local/bin/claude-yolo
+sudo ln -sf "$HOME/.local/bin/claude-rc"   /usr/local/bin/claude-rc
+
+echo "==> Installing the Remote Control server service"
+# `claude remote-control` (server mode) registers this VM as an environment in
+# claude.ai/code and the Claude app, where you can start new sessions on it.
+# A systemd user service runs it at boot inside a dedicated tmux socket, so
+# `claude-rc` can attach to see its status/QR code (detach with Ctrl-b d).
+cat > "$HOME/.local/bin/claude-rc-server" <<'EOF'
+#!/bin/bash
+# Run by claude-remote-control.service inside tmux. Waits for the network and
+# a claude.ai login (none after `vagrant snapshot restore clean`), then serves.
+cd "$HOME/workspace"
+until getent hosts claude.ai >/dev/null; do sleep 2; done
+until claude auth status 2>/dev/null | grep -q '"loggedIn": true'; do
+  echo "Not logged in to Claude. Run claude-yolo once to log in; retrying in 60s."
+  sleep 60
+done
+exec claude remote-control --spawn same-dir --permission-mode bypassPermissions \
+  --remote-control-session-name-prefix "$(hostname)"
+EOF
+cat > "$HOME/.local/bin/claude-rc" <<'EOF'
+#!/bin/bash
+# Show the Remote Control server (URL, QR code with space). Detach: Ctrl-b d.
+exec tmux -L claude-rc attach -t claude-rc
+EOF
+chmod +x "$HOME/.local/bin/claude-rc-server" "$HOME/.local/bin/claude-rc"
+
+mkdir -p "$HOME/.config/systemd/user"
+cat > "$HOME/.config/systemd/user/claude-remote-control.service" <<'EOF'
+[Unit]
+Description=Claude Code Remote Control server (tmux -L claude-rc)
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/tmux -L claude-rc new-session -d -s claude-rc -x 160 -y 45 %h/.local/bin/claude-rc-server
+ExecStop=/usr/bin/tmux -L claude-rc kill-server
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target
+EOF
+# Linger starts the user's systemd instance (and this service) at boot,
+# without anyone logging in.
+sudo loginctl enable-linger "$USER"
+export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+systemctl --user daemon-reload
+systemctl --user enable --now claude-remote-control.service
 
 git config --global init.defaultBranch main
 git config --global user.name  >/dev/null || git config --global user.name  "Claude Sandbox"
