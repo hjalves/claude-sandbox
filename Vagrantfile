@@ -9,7 +9,7 @@
 # default, so Claude can only touch what you put inside the VM. It does get a
 # bridged network card on your LAN (see BRIDGE_IF below).
 
-require_relative "../vagrant/lib/port_check_fix"
+require_relative "lib/port_check_fix"
 
 # Host interface for the bridged network card, which gives the VM its own
 # address on your LAN (from your router's DHCP). en0 is the Wi-Fi on a MacBook;
@@ -37,7 +37,7 @@ Vagrant.configure("2") do |config|
     u.cpus   = 4
     u.memory = 6144
     u.icon   = "arch-linux"
-    u.notes  = "Claude Code sandbox (ClaudeArch/claude-sandbox). Disposable."
+    u.notes  = "Claude Code sandbox (claude-sandbox). Disposable."
 
     # vagrant_utm ignores `public_network` and can't add network cards, but a
     # pre-boot customization can run our own script (an absolute path is used

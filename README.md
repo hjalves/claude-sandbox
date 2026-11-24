@@ -1,6 +1,7 @@
 # Claude Code sandbox VM
 
-A disposable Arch Linux ARM VM (UTM + Vagrant, from the `local/arch` box in `../vagrant`)
+A disposable Arch Linux ARM VM (UTM + Vagrant, from the `local/arch` box built by
+[archlinux-arm-utm](https://github.com/hjalves/archlinux-arm-utm))
 where Claude Code runs with **every permission check off**. The VM is the safety boundary.
 
 ## Use
