@@ -45,5 +45,23 @@ EOF
 sshd -t
 systemctl reload sshd
 
+# Under UTM's QEMU with HVF, a reboot started inside the guest hangs: the VM
+# resets but the next boot never finishes and QEMU spins every core. It only
+# happens with more than one vCPU, so take the secondary vCPUs offline (PSCI
+# CPU_OFF) as the very last step before a reboot. systemd-shutdown runs this
+# after everything is unmounted, with "reboot", "poweroff", "halt" or "kexec".
+echo "==> Installing the reboot workaround (offline secondary vCPUs)"
+install -d /usr/lib/systemd/system-shutdown
+cat > /usr/lib/systemd/system-shutdown/offline-cpus.sh <<'EOF'
+#!/bin/sh
+# claude-sandbox provisioning: see provision/system.sh for why.
+[ "$1" = reboot ] || exit 0
+for c in /sys/devices/system/cpu/cpu[1-9]*/online; do
+  [ -w "$c" ] && echo 0 > "$c"
+done
+exit 0
+EOF
+chmod 755 /usr/lib/systemd/system-shutdown/offline-cpus.sh
+
 pacman -Scc --noconfirm >/dev/null
 echo "==> System ready"

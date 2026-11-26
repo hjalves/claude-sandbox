@@ -55,6 +55,13 @@ Team or Enterprise plan; API-key logins don't get Remote Control.
   `vagrant provision`. `claude-yolo` also passes
   `--dangerously-skip-permissions`, and `~/workspace/CLAUDE.md` tells Claude where it is.
 
+- **Reboot workaround**: under UTM's QEMU with HVF, a reboot started inside the guest
+  (`sudo reboot`) hangs with more than one vCPU: the next boot never finishes and QEMU
+  spins every core. A systemd-shutdown hook
+  (`/usr/lib/systemd/system-shutdown/offline-cpus.sh`) takes vCPUs 1-3 offline just before
+  the reset, which avoids it. If the VM still hangs, recover with
+  `vagrant halt -f && vagrant up`.
+
 ## What the sandbox does and doesn't isolate
 
 - **Isolated**: your Mac's files. No folders are shared by default (see the commented
