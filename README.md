@@ -45,6 +45,8 @@ Team or Enterprise plan; API-key logins don't get Remote Control.
 - **DNS**: `/etc/resolv.conf` links to systemd-resolved's stub
   (`/run/systemd/resolve/stub-resolv.conf`, `127.0.0.53`); `resolvectl status` shows the
   upstream servers each card got from DHCP
+- **mDNS**: systemd-resolved answers for `claude-sandbox.local` on the Shared and Bridged cards and resolves other
+  `.local` names (`resolvectl mdns` shows it per card)
 - **Tools**: git, gh, ripgrep, fd, jq, Python with pip and uv, Node and npm, base-devel
   (gcc, make), tmux and vim. `vagrant` has passwordless sudo, so Claude can
   `sudo pacman -S` anything else.

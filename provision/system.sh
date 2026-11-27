@@ -9,6 +9,21 @@ systemctl enable --now systemd-resolved
 ln -sfn /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 for _ in {1..30}; do getent hosts archlinux.org >/dev/null && break; sleep 1; done
 
+# mDNS through systemd-resolved: the VM answers as <hostname>.local (so the Mac
+# and the LAN can reach it by name) and resolves other .local names. It needs
+# both the global switch and the per-link one in networkd. enp0s2 is QEMU's
+# user-mode card (10.0.2.15, only for the SSH port forward); nothing outside
+# the VM can reach that address, so keep it out of mDNS answers. networkd uses
+# the first .network file that matches, so 10-qemu-user.network wins for it.
+echo "==> Enabling mDNS (systemd-resolved)"
+install -d /etc/systemd/resolved.conf.d /etc/systemd/network/20-ethernet.network.d
+printf '[Resolve]\nMulticastDNS=yes\n' > /etc/systemd/resolved.conf.d/mdns.conf
+printf '[Network]\nMulticastDNS=yes\n' > /etc/systemd/network/20-ethernet.network.d/mdns.conf
+printf '[Match]\nName=enp0s2\n\n[Network]\nDHCP=yes\nMulticastDNS=no\n' \
+  > /etc/systemd/network/10-qemu-user.network
+systemctl restart systemd-resolved
+networkctl reload
+
 echo "==> Updating the system"
 pacman -Syu --noconfirm
 
